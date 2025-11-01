@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ECG Event Annotation",
+  "type": "object",
+  "properties": {
+    "recording_id": {
+      "type": "string",
+      "description": "Unique identifier for the ECG recording."
+    },
+    "patient_id": {
+      "type": "string",
+      "description": "Anonymized patient identifier."
+    },
+    "lead": {
+      "type": "string",
+      "enum": ["I","II","III","aVR","aVL","aVF","V1","V2","V3","V4","V5","V6"],
+      "description": "ECG lead for the annotation."
+    },
+    "events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event_label": {
+            "type": "string",
+            "enum": [
+              "Normal",
+              "PVC",
+              "PAC",
+              "P-onset",
+              "P-offset",
+              "QRS-onset",
+              "R-peak",
+              "QRS-offset",
+              "T-onset",
+              "T-peak",
+              "T-offset",
+              "AFib",
+              "AFlutter",
+              "SVT",
+              "VT",
+              "ST Elevation",
+              "ST Depression",
+              "Noise",
+              "Artifact",
+              "Lead-Off"
+            ],
+            "description": "Annotation/event label describing ECG event type."
+          },
+          "timestamp": {
+            "type": "integer",
+            "description": "Sample index or millisecond timestamp of the event."
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "Probability/confidence score (for AI annotation)."
+          }
+        },
+        "required": ["event_label", "timestamp"]
+      }
+    },
+    "device_info": {
+      "type": "object",
+      "properties": {
+        "device_model": {"type": "string"},
+        "sampling_rate": {"type": "integer"},
+        "bit_depth": {"type": "integer"}
+      }
+    }
+  },
+  "required": ["recording_id", "lead", "events"]
+}
