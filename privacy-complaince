@@ -1,0 +1,154 @@
+import json
+from jsonschema import validate, ValidationError
+
+# Define the JSON schema with ECG event annotations and metadata fields
+ecg_annotation_schema = {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ECG Event Annotation with Privacy and Provenance Metadata",
+    "type": "object",
+    "properties": {
+        "recording_id": {"type": "string"},
+        "patient_id": {"type": "string"},
+        "date_of_birth": {"type": "string", "pattern": "^\\d{4}(-\\d{2}-\\d{2})?$"},  # YYYY or YYYY-MM-DD
+        "sex": {"type": "string", "enum": ["M", "F", "O", "U"]},
+        "recording_date": {"type": "string", "pattern": "^\\d{4}(-\\d{2}-\\d{2})?$"},
+        "geographic_region": {"type": "string"},
+        "consent_status": {"type": "string", "enum": ["obtained", "waived", "pending"]},
+        "data_access_level": {"type": "string", "enum": ["restricted", "public", "internal"]},
+        "privacy_flags": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "recording_device_id": {"type": "string"},
+        "device_manufacturer": {"type": "string"},
+        "recording_operator": {"type": "string"},
+        "acquisition_site": {"type": "string"},
+        "annotation_author": {"type": "string"},
+        "annotation_timestamp": {"type": "string", "format": "date-time"},
+        "file_creation_timestamp": {"type": "string", "format": "date-time"},
+        "file_modification_history": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "modifier_id": {"type": "string"},
+                    "modification_timestamp": {"type": "string", "format": "date-time"},
+                    "modification_description": {"type": "string"}
+                },
+                "required": ["modifier_id", "modification_timestamp"]
+            }
+        },
+        "hash_checksum": {"type": "string"},
+        "provenance_chain": {
+            "type": "array",
+            "items": {"type": "string"}
+        },
+        "data_sharing_agreement_id": {"type": "string"},
+        "audit_trail": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "accessor_id": {"type": "string"},
+                    "access_purpose": {"type": "string"},
+                    "access_timestamp": {"type": "string", "format": "date-time"}
+                },
+                "required": ["accessor_id", "access_purpose", "access_timestamp"]
+            }
+        },
+        "lead": {
+            "type": "string",
+            "enum": ["I","II","III","aVR","aVL","aVF","V1","V2","V3","V4","V5","V6"]
+        },
+        "events": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "event_label": {
+                        "type": "string",
+                        "enum": [
+                            "Normal", "PVC", "PAC", "P-onset", "P-offset",
+                            "QRS-onset", "R-peak", "QRS-offset", "T-onset",
+                            "T-peak", "T-offset", "AFib", "AFlutter", "SVT",
+                            "VT", "ST Elevation", "ST Depression", "Noise",
+                            "Artifact", "Lead-Off"
+                        ]
+                    },
+                    "timestamp": {"type": "integer"},
+                    "confidence": {"type": "number", "minimum": 0, "maximum": 1}
+                },
+                "required": ["event_label", "timestamp"]
+            }
+        },
+        "device_info": {
+            "type": "object",
+            "properties": {
+                "device_model": {"type": "string"},
+                "sampling_rate": {"type": "integer"},
+                "bit_depth": {"type": "integer"}
+            },
+            "required": ["device_model", "sampling_rate", "bit_depth"]
+        }
+    },
+    "required": ["recording_id", "patient_id", "lead", "events", "device_info", "consent_status"]
+}
+
+# Example JSON data (ECG annotation instance)
+example_ecg_data = {
+    "recording_id": "REC123456",
+    "patient_id": "PAT7890",
+    "date_of_birth": "1978",
+    "sex": "M",
+    "recording_date": "2025-10-01",
+    "geographic_region": "Delhi, India",
+    "consent_status": "obtained",
+    "data_access_level": "restricted",
+    "privacy_flags": ["de-identified"],
+    "recording_device_id": "DEV4567",
+    "device_manufacturer": "ECGTech",
+    "recording_operator": "OP123",
+    "acquisition_site": "Hospital XYZ",
+    "annotation_author": "Dr. ABC",
+    "annotation_timestamp": "2025-10-02T15:30:00Z",
+    "file_creation_timestamp": "2025-10-02T15:00:00Z",
+    "file_modification_history": [
+        {
+            "modifier_id": "OP123",
+            "modification_timestamp": "2025-10-02T15:15:00Z",
+            "modification_description": "Initial annotation"
+        }
+    ],
+    "hash_checksum": "sha256:abc123def456",
+    "provenance_chain": ["raw_rec_001", "preproc_002"],
+    "data_sharing_agreement_id": "AGR-2025-001",
+    "audit_trail": [
+        {
+            "accessor_id": "Reviewer1",
+            "access_purpose": "Quality check",
+            "access_timestamp": "2025-10-03T10:00:00Z"
+        }
+    ],
+    "lead": "II",
+    "events": [
+        {"event_label": "R-peak", "timestamp": 1024, "confidence": 0.98},
+        {"event_label": "PVC", "timestamp": 2048}
+    ],
+    "device_info": {
+        "device_model": "Model-X",
+        "sampling_rate": 500,
+        "bit_depth": 16
+    }
+}
+
+
+def validate_ecg_annotation(data, schema):
+    try:
+        validate(instance=data, schema=schema)
+        print("ECG annotation JSON data is valid.")
+    except ValidationError as e:
+        print(f"Validation error: {e.message}")
+
+
+# Run validation on example data
+validate_ecg_annotation(example_ecg_data, ecg_annotation_schema)
